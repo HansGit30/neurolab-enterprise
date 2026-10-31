@@ -1,0 +1,3 @@
+# Worker de entrenamiento (API + TensorFlow/Keras). Necesita ~700 MB de RAM o más.
+-r requirements.txt
+tensorflow-cpu==2.21.0

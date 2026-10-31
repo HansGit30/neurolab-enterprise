@@ -1,0 +1,25 @@
+# Entorno local completo: PostgreSQL + API con worker embebido (auth de desarrollo, sin Supabase)
+#   docker compose -f infra/docker/docker-compose.yml up --build
+#   luego: cd apps/web && cp .env.example .env && npm install && npm run dev
+services:
+  db:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: neurolab }
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ../migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ../migrations/002_network_snapshots.sql:/docker-entrypoint-initdb.d/002_network_snapshots.sql:ro
+  api:
+    build: { context: ../../services/api, args: { REQS: requirements-worker.txt } }
+    environment:
+      ENVIRONMENT: development
+      AUTH_MODE: dev
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/neurolab
+      EMBEDDED_WORKER: "true"
+      LOCAL_STORAGE_DIR: /tmp/storage
+      CORS_ORIGINS: http://localhost:5173
+    ports: ["8000:8000"]
+    depends_on: [db]
+volumes:
+  pgdata:

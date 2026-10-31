@@ -1,0 +1,49 @@
+# Render Blueprint · NeuroLab Enterprise API
+# Render → New → Blueprint → elige este repositorio. Pide los valores marcados con sync:false.
+services:
+  - type: web
+    name: neurolab-api
+    runtime: python
+    plan: free                      # 512 MB: la API cabe; TensorFlow NO (ver DEPLOY.md)
+    region: oregon
+    rootDir: services/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: ENVIRONMENT
+        value: production
+      - key: AUTH_MODE
+        value: supabase
+      - key: EMBEDDED_WORKER        # false = el worker corre aparte (Hugging Face Space o Render worker)
+        value: "false"
+      - key: STORAGE_BUCKET
+        value: neurolab
+      - key: DATABASE_URL           # Supabase → Connect → Session pooler (puerto 5432)
+        sync: false
+      - key: SUPABASE_URL           # https://<ref>.supabase.co
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET    # opcional (solo proyectos con "Legacy JWT secret")
+        sync: false
+      - key: CORS_ORIGINS           # https://<tu-app>.vercel.app
+        sync: false
+      - key: WORKER_WAKE_URL        # https://<usuario>-neurolab-worker.hf.space (despierta al worker)
+        sync: false
+
+# --- Opción "todo en Render" (de pago): descomenta y cambia arriba EMBEDDED_WORKER a "false"
+#  - type: worker
+#    name: neurolab-training-worker
+#    runtime: python
+#    plan: standard                # 2 GB de RAM: necesario para TensorFlow
+#    rootDir: services/api
+#    buildCommand: pip install -r requirements-worker.txt
+#    startCommand: python -m app.workers.training
+#    envVars:
+#      - key: PYTHON_VERSION
+#        value: 3.12.8
+#      # + las mismas DATABASE_URL, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY y STORAGE_BUCKET de la API
